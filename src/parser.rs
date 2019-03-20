@@ -15,7 +15,18 @@ pub fn parse_hcl(filename: &str) -> std::io::Result<Vec<DocItem>> {
             result.push(DocItem::new());
         }
     }
-    result.pop(); // Remove the last DocItem from the collection
+    result.pop(); // Remove the last DocItem from the collection since it's empty
+    result = result
+        .into_iter()
+        .filter(|i| {
+            if let Some(BlockVariant::Comment) = i.category {
+                if let Some(line) = i.description.first() {
+                    return line.starts_with("Title: ");
+                }
+            }
+            true
+        })
+        .collect();
     Ok(result)
 }
 
