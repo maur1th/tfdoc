@@ -1,0 +1,29 @@
+use crate::types::{BlockType, DocItem};
+
+pub fn render(result: &[DocItem]) {
+    for item in result.iter().filter(|i| i.category == BlockType::Comment) {
+        print_title_block(&item.description);
+    }
+    print_body(result, "Resources", BlockType::Resource);
+    print_body(result, "Inputs", BlockType::Variable);
+    print_body(result, "Outputs", BlockType::Output);
+    println!("");
+}
+
+fn print_title_block(description: &[String]) {
+    println!("# {}\n", description.first().unwrap());
+    for line in description.iter().skip(1) {
+        println!("{}", line);
+    }
+}
+
+fn print_body(result: &[DocItem], name: &str, variant: BlockType) {
+    for (index, item) in result.iter().filter(|i| i.category == variant).enumerate() {
+        if index == 0 && item.description.len() > 0 {
+            println!("\n## {}\n", name);
+        }
+        if item.description.len() > 0 {
+            println!("* `{}`: {}", item.name, item.description.join(" "));
+        }
+    }
+}

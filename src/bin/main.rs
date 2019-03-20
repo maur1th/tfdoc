@@ -1,13 +1,11 @@
 use std::io;
 
 extern crate tfdoc;
-use tfdoc::parser::parse_hcl;
+use tfdoc::{parser, printer};
 
 fn run_app() -> io::Result<()> {
-    let result = parse_hcl("variables.tf")?;
-    for line in result {
-        println!("{}", line);
-    }
+    let result = parser::parse_hcl("variables.tf")?;
+    printer::render(&result);
     Ok(())
 }
 
