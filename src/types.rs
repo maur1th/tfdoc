@@ -2,7 +2,7 @@ use std::fmt;
 
 #[derive(Debug)]
 pub struct DocItem {
-    pub category: Option<BlockVariant>,
+    pub category: BlockType,
     pub name: String,
     pub description: Vec<String>,
 }
@@ -10,7 +10,7 @@ pub struct DocItem {
 impl DocItem {
     pub fn new() -> DocItem {
         DocItem {
-            category: None,
+            category: BlockType::None,
             name: String::new(),
             description: vec![],
         }
@@ -27,24 +27,16 @@ impl fmt::Display for DocItem {
     }
 }
 
-#[derive(Debug)]
-pub enum BlockVariant {
+#[derive(Debug, PartialEq)]
+pub enum BlockType {
     Comment,
     Resource,
     Output,
     Variable,
+    None,
 }
 
-// impl fmt::Display for BlockVariant {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         let diff = match self.diff {
-//             '.' => "".to_owned(),
-//             _ => format!("{} ", self.diff),
-//         };
-//         write!(f, "{}{}{}", " ".repeat(self.depth * 2), diff, self.contents)
-//     }
-// }
-
+#[derive(PartialEq)]
 pub enum Directive {
     Continue,
     Stop,

@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-use crate::types::{BlockVariant, Directive, DocItem};
+use crate::types::{BlockType, Directive, DocItem};
 
 pub fn parse_hcl(filename: &str) -> std::io::Result<Vec<DocItem>> {
     let file = File::open(filename)?;
@@ -11,7 +11,7 @@ pub fn parse_hcl(filename: &str) -> std::io::Result<Vec<DocItem>> {
     for line in buf_reader.lines() {
         let state = parse_line(line?, result.pop().unwrap());
         result.push(state.0);
-        if let Directive::Stop = state.1 {
+        if state.1 == Directive::Stop {
             result.push(DocItem::new());
         }
     }
@@ -19,7 +19,7 @@ pub fn parse_hcl(filename: &str) -> std::io::Result<Vec<DocItem>> {
     result = result
         .into_iter()
         .filter(|i| {
-            if let Some(BlockVariant::Comment) = i.category {
+            if i.category == BlockType::Comment {
                 if let Some(line) = i.description.first() {
                     return line.starts_with("Title: ");
                 }
@@ -32,34 +32,31 @@ pub fn parse_hcl(filename: &str) -> std::io::Result<Vec<DocItem>> {
 
 fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
     match get_line_variant(&line) {
-        Some(BlockVariant::Resource) => {
-            result.category = Some(BlockVariant::Resource);
+        BlockType::Resource => {
+            result.category = BlockType::Resource;
             result.name = parse_resource(&line);
         }
-        Some(BlockVariant::Output) => {
-            result.category = Some(BlockVariant::Output);
+        BlockType::Output => {
+            result.category = BlockType::Output;
             result.name = String::from(parse_output(&line));
         }
-        Some(BlockVariant::Variable) => {
-            result.category = Some(BlockVariant::Variable);
+        BlockType::Variable => {
+            result.category = BlockType::Variable;
             result.name = String::from(parse_variable(&line));
         }
-        Some(BlockVariant::Comment) => {
+        BlockType::Comment => {
             if line.trim_start_matches('#').trim().len() > 0 {
-                result.category = Some(BlockVariant::Comment);
+                result.category = BlockType::Comment;
                 result.description.push(String::from(parse_comment(&line)));
             }
         }
-        None => {
-            if line.starts_with('}') && result.category.is_some() {
+        BlockType::None => {
+            if (line.starts_with('}') && result.category != BlockType::None)
+                || (line.trim().len() == 0 && result.category == BlockType::Comment)
+            {
                 return (result, Directive::Stop);
             }
-            if line.trim().len() == 0 {
-                if let Some(BlockVariant::Comment) = result.category {
-                    return (result, Directive::Stop);
-                }
-            }
-            if let Some(BlockVariant::Variable) = result.category {
+            if result.category == BlockType::Variable {
                 if let Some(description) = parse_variable_description(&line) {
                     result.description.push(String::from(description));
                 }
@@ -69,19 +66,19 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
     (result, Directive::Continue)
 }
 
-fn get_line_variant(line: &str) -> Option<BlockVariant> {
+fn get_line_variant(line: &str) -> BlockType {
     let variants = vec![
-        ("resource ", BlockVariant::Resource),
-        ("variable ", BlockVariant::Variable),
-        ("output ", BlockVariant::Output),
-        ("#", BlockVariant::Comment),
+        ("resource ", BlockType::Resource),
+        ("variable ", BlockType::Variable),
+        ("output ", BlockType::Output),
+        ("#", BlockType::Comment),
     ];
     for variant in variants {
         if line.starts_with(variant.0) {
-            return Some(variant.1);
+            return variant.1;
         }
     }
-    None
+    BlockType::None
 }
 
 fn parse_resource(line: &str) -> String {
@@ -131,7 +128,7 @@ mod tests {
     fn get_line_variant_resource() {
         let line = r#"resource "foo" "bar" {"#;
         match get_line_variant(line) {
-            Some(BlockVariant::Resource) => {}
+            BlockType::Resource => {}
             _ => panic!("Type error!"),
         }
     }
@@ -140,7 +137,7 @@ mod tests {
     fn get_line_variant_output() {
         let line = r#"output "foo" {"#;
         match get_line_variant(line) {
-            Some(BlockVariant::Output) => {}
+            BlockType::Output => {}
             _ => panic!("Type error!"),
         }
     }
@@ -149,7 +146,7 @@ mod tests {
     fn get_line_variant_variable() {
         let line = r#"variable "foo" {"#;
         match get_line_variant(line) {
-            Some(BlockVariant::Variable) => {}
+            BlockType::Variable => {}
             _ => panic!("Type error!"),
         }
     }
@@ -158,7 +155,7 @@ mod tests {
     fn get_line_variant_comment() {
         let line = r#"# foo"#;
         match get_line_variant(line) {
-            Some(BlockVariant::Comment) => {}
+            BlockType::Comment => {}
             _ => panic!("Type error!"),
         }
     }
@@ -167,7 +164,7 @@ mod tests {
     fn get_line_variant_comment2() {
         let line = r#"#foo"#;
         match get_line_variant(line) {
-            Some(BlockVariant::Comment) => {}
+            BlockType::Comment => {}
             _ => panic!("Type error!"),
         }
     }
@@ -176,7 +173,7 @@ mod tests {
     fn get_line_variant_none() {
         let line = r#"  foo"#;
         match get_line_variant(line) {
-            None => {}
+            BlockType::None => {}
             _ => panic!("Type error!"),
         }
     }
