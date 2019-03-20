@@ -1,3 +1,4 @@
 pub mod parser;
 pub mod printer;
-mod types;
+pub mod types;
+pub mod util;

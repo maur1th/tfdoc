@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::path::PathBuf;
 
 use crate::types::{BlockType, DocItem};
 
@@ -10,7 +11,7 @@ enum Directive {
     Stop,
 }
 
-pub fn parse_hcl(filename: &str) -> std::io::Result<Vec<DocItem>> {
+pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
     let mut result = vec![DocItem::new()];
