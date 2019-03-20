@@ -35,9 +35,3 @@ pub enum BlockType {
     Variable,
     None,
 }
-
-#[derive(PartialEq)]
-pub enum Directive {
-    Continue,
-    Stop,
-}

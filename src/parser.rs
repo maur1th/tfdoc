@@ -2,7 +2,13 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-use crate::types::{BlockType, Directive, DocItem};
+use crate::types::{BlockType, DocItem};
+
+#[derive(PartialEq)]
+enum Directive {
+    Continue,
+    Stop,
+}
 
 pub fn parse_hcl(filename: &str) -> std::io::Result<Vec<DocItem>> {
     let file = File::open(filename)?;
