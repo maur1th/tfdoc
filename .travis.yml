@@ -1,0 +1,30 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+
+after_success:
+  - scripts/push_version.sh
+
+before_deploy:
+  - cargo build --release
+  - mv target/release/{main,tfdoc}
+  - bzip2 -f target/release/tfdoc
+deploy:
+  - provider: releases
+    skip_cleanup: true
+    api_key: $GITHUB_TOKEN
+    file: target/release/tfdoc.bz2
+    on:
+      tags: true
+      rust: stable
+  - provider: script
+    script: scripts/upload_to_crates_io.sh
+    on:
+      tags: true
+      rust: stable
