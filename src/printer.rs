@@ -19,10 +19,12 @@ fn print_title_block(description: &[String]) {
 
 fn print_body(result: &[DocItem], name: &str, variant: BlockType) {
     for (index, item) in result.iter().filter(|i| i.category == variant).enumerate() {
-        if index == 0 && item.description.len() > 0 {
+        if (index == 0 && item.description.len() > 0)
+            || (index == 0 && variant != BlockType::Resource)
+        {
             println!("\n## {}\n", name);
         }
-        if item.description.len() > 0 {
+        if item.description.len() > 0 || variant != BlockType::Resource {
             println!("* `{}`: {}", item.name, item.description.join(" "));
         }
     }
