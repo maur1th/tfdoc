@@ -63,7 +63,9 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
             {
                 return (result, Directive::Stop);
             }
-            if result.category == BlockType::Variable || result.category == BlockType::Output {
+            if (result.category == BlockType::Variable || result.category == BlockType::Output)
+                && line.trim().starts_with("description")
+            {
                 if let Some(description) = parse_description(&line) {
                     result.description.push(String::from(description));
                 }
