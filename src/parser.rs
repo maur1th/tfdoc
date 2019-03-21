@@ -63,8 +63,8 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
             {
                 return (result, Directive::Stop);
             }
-            if result.category == BlockType::Variable {
-                if let Some(description) = parse_variable_description(&line) {
+            if result.category == BlockType::Variable || result.category == BlockType::Output {
+                if let Some(description) = parse_description(&line) {
                     result.description.push(String::from(description));
                 }
             }
@@ -105,7 +105,7 @@ fn parse_variable(line: &str) -> &str {
         .collect::<Vec<&str>>()[0]
 }
 
-fn parse_variable_description(line: &str) -> Option<&str> {
+fn parse_description(line: &str) -> Option<&str> {
     let start = line.find('"')?;
     let substring = line.get(start..)?;
     Some(substring.trim_matches('"'))
@@ -204,9 +204,9 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_variable_description() {
+    fn test_parse_description() {
         let line = r#"  description = "foo bar""#;
-        assert_eq!(parse_variable_description(line), Some("foo bar"));
+        assert_eq!(parse_description(line), Some("foo bar"));
     }
 
     #[test]
