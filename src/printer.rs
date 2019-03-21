@@ -7,7 +7,6 @@ pub fn render(result: &[DocItem]) {
     print_body(result, "Resources", BlockType::Resource);
     print_body(result, "Inputs", BlockType::Variable);
     print_body(result, "Outputs", BlockType::Output);
-    println!("");
 }
 
 fn print_title_block(description: &[String]) {
