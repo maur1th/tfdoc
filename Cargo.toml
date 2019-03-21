@@ -1,6 +1,6 @@
 [package]
 name = "tfdoc"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Thomas Maurin <maur1th@users.noreply.github.com>"]
 edition = "2018"
 
