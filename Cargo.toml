@@ -1,7 +1,16 @@
 [package]
 name = "tfdoc"
+edition = "2018"
 version = "0.1.2"
 authors = ["Thomas Maurin <maur1th@users.noreply.github.com>"]
-edition = "2018"
+license = "Apache-2.0"
+repository = "https://github.com/maur1th/tfdoc"
+categories = ["development-tools"]
+keywords = ["terraform", "documentation"]
+description = "Generate Terraform module documentation"
+readme = "README.md"
+
+[badges]
+travis-ci = { repository = "maur1th/tfdoc", branch = "master" }
 
 [dependencies]
