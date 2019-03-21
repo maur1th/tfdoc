@@ -7,7 +7,7 @@ This project aims at generating Terraform module documentation.
 tfdoc will parse all the files within a module's directory and generate a README.tf accordingly:
 
 ```tf
-# Title: This is a module title
+# Title: The name of the module
 # Top comment prefixed by "Title: " and the following lines
 # will be at the top of the Markdown file
 
@@ -16,8 +16,15 @@ variable "environment" {
 }
 
 # tfdoc keeps comments right on top of resource, variable
-# and output blocks
-resource "aws_instance" "this" {}
+# and output blocks. All variables and outputs are kept.
+# Only resources with comments on top are.
+resource "aws_instance" "this" {
+  # stuff
+}
+
+resource "aws_instance" "no_comment_here" {
+  # stuff
+}
 
 ##
 ## tfdoc discards other "orphaned" comments
@@ -34,9 +41,13 @@ data "aws_ami" "node" {}
 
 ```sh
 $ tfdoc $PATH_TO_MODULE
-# This is a random title
+# The name of the module
 
 Top comment prefixed by "Title: " and the following lines will be at the top of the Markdown file
+
+## Resources
+
+* `aws_instance.this`: tfdoc keeps comments right on top of resource, variable and output blocks. All variables and outputs are kept. Only resources with comments on top are.
 
 ## Inputs
 
