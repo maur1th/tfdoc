@@ -11,7 +11,8 @@ pub fn render(result: &[DocItem]) {
 }
 
 fn print_title_block(description: &[String]) {
-    println!("# {}\n", description.first().unwrap());
+    let title = &description.first().unwrap()["Title: ".len()..];
+    println!("# {}\n", title);
     for line in description.iter().skip(1) {
         println!("{}", line);
     }
