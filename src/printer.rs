@@ -14,9 +14,8 @@ fn print_title_block(description: &[String]) {
     let title = &description.first().unwrap()["Title: ".len()..];
     println!("# {}\n", title);
     for line in description.iter().skip(1) {
-        print!("{} ", line);
+        println!("{}", line);
     }
-    println!("");
 }
 
 fn print_body(result: &[DocItem], name: &str, variant: BlockType) {
