@@ -39,30 +39,18 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
 
 fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
     match get_line_variant(&line) {
-        BlockType::Resource => {
-            result.category = BlockType::Resource;
-            result.name = parse_resource(&line);
-        }
-        BlockType::Output => {
-            result.category = BlockType::Output;
-            result.name = String::from(parse_output(&line));
-        }
-        BlockType::Variable => {
-            result.category = BlockType::Variable;
-            result.name = String::from(parse_variable(&line));
-        }
-        BlockType::Comment => {
-            if line.trim_start_matches('#').trim().len() > 0 {
-                result.category = BlockType::Comment;
-                result.description.push(String::from(parse_comment(&line)));
-            }
-        }
+        BlockType::Resource => parse_regular(line, result, BlockType::Resource, &parse_resource),
+        BlockType::Output => parse_regular(line, result, BlockType::Output, &parse_interface),
+        BlockType::Variable => parse_regular(line, result, BlockType::Variable, &parse_interface),
+        BlockType::Comment => (parse_comment(line, result), Directive::Continue),
         BlockType::None => {
+            // Determine if it should stop parsing this block
             if (line.starts_with('}') && result.category != BlockType::None)
                 || (line.trim().len() == 0 && result.category == BlockType::Comment)
             {
                 return (result, Directive::Stop);
             }
+            // Parse description if relevant
             if (result.category == BlockType::Variable || result.category == BlockType::Output)
                 && line.trim().starts_with("description")
             {
@@ -70,9 +58,9 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
                     result.description.push(String::from(description));
                 }
             }
+            (result, Directive::Continue)
         }
-    };
-    (result, Directive::Continue)
+    }
 }
 
 fn get_line_variant(line: &str) -> BlockType {
@@ -90,6 +78,20 @@ fn get_line_variant(line: &str) -> BlockType {
     BlockType::None
 }
 
+fn parse_regular(
+    line: String,
+    mut result: DocItem,
+    category: BlockType,
+    parser_function: &Fn(&str) -> String,
+) -> (DocItem, Directive) {
+    result.category = category;
+    result.name = parser_function(&line);
+    match line.trim().ends_with('}') {
+        true => (result, Directive::Stop),
+        false => (result, Directive::Continue),
+    }
+}
+
 fn parse_resource(line: &str) -> String {
     line.split_whitespace()
         .skip(1)
@@ -99,12 +101,15 @@ fn parse_resource(line: &str) -> String {
         .join(".")
 }
 
-fn parse_variable(line: &str) -> &str {
-    line.split_whitespace()
+fn parse_interface(line: &str) -> String {
+    // Parse variable and output blocks
+    let result = line
+        .split_whitespace()
         .skip(1)
         .take(1)
         .map(|s| s.trim_matches('"'))
-        .collect::<Vec<&str>>()[0]
+        .collect::<Vec<&str>>()[0];
+    String::from(result)
 }
 
 fn parse_description(line: &str) -> Option<&str> {
@@ -113,16 +118,13 @@ fn parse_description(line: &str) -> Option<&str> {
     Some(substring.trim_matches('"'))
 }
 
-fn parse_output(line: &str) -> &str {
-    line.split_whitespace()
-        .skip(1)
-        .take(1)
-        .map(|s| s.trim_matches('"'))
-        .collect::<Vec<&str>>()[0]
-}
-
-fn parse_comment(line: &str) -> &str {
-    line.trim_start_matches('#').trim()
+fn parse_comment(line: String, mut result: DocItem) -> DocItem {
+    let parsed = line.trim_start_matches('#').trim();
+    if parsed.len() > 0 {
+        result.category = BlockType::Comment;
+        result.description.push(String::from(parsed));
+    }
+    result
 }
 
 //
@@ -196,13 +198,13 @@ mod tests {
     #[test]
     fn test_parse_output() {
         let line = r#"output "foo" {"#;
-        assert_eq!(parse_output(line), "foo");
+        assert_eq!(parse_interface(line), "foo");
     }
 
     #[test]
     fn test_parse_variable() {
         let line = r#"variable "foo" {"#;
-        assert_eq!(parse_variable(line), "foo");
+        assert_eq!(parse_interface(line), "foo");
     }
 
     #[test]
@@ -213,13 +215,15 @@ mod tests {
 
     #[test]
     fn test_parse_comment() {
-        let line = r#"# foo bar"#;
-        assert_eq!(parse_comment(line), "foo bar");
+        let line = String::from(r#"# foo bar"#);
+        let result = DocItem::new();
+        assert_eq!(parse_comment(line, result).description[0], "foo bar");
     }
 
     #[test]
     fn test_parse_comment2() {
-        let line = r#"#foo bar"#;
-        assert_eq!(parse_comment(line), "foo bar");
+        let line = String::from(r#"#foo bar"#);
+        let result = DocItem::new();
+        assert_eq!(parse_comment(line, result).description[0], "foo bar");
     }
 }
