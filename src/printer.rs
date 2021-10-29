@@ -18,7 +18,7 @@ pub fn render(result: &[DocItem], as_table: bool) {
     }
 }
 
-/// Creates H1 the title block
+/// Creates the H1 title block
 fn print_title_block(description: &[String]) {
     let title = &description.first().unwrap()["Title: ".len()..];
     println!("# {}\n", title);
