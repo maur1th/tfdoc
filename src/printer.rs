@@ -74,7 +74,7 @@ fn print_resources_table(result: &[DocItem], name: &str, variant: BlockType) {
     }
 }
 
-/// Outputs the interfaces (ie. the `variable` and `output` sections)
+/// Outputs the interfaces (ie. the `variable` and `output` sections) as a table
 fn print_interface_table(result: &[DocItem], name: &str, variant: BlockType) {
     for (index, item) in result.iter().filter(|i| i.category == variant).enumerate() {
         if index == 0 {
