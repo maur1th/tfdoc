@@ -1,3 +1,6 @@
+//! Contains the functionality for parsing Terraform files and returning the
+//! relevant comments and descriptions for the various sections.
+
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -11,18 +14,22 @@ enum Directive {
     Stop,
 }
 
+/// Read a file and return a parsed list of DocItems
 pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
-    let file = File::open(filename)?;
-    let buf_reader = BufReader::new(file);
     let mut result = vec![DocItem::new()];
-    for line in buf_reader.lines() {
+
+    // Read the lines in the file and parse
+    for line in BufReader::new(File::open(filename)?).lines() {
         let state = parse_line(line?, result.pop().unwrap());
         result.push(state.0);
         if state.1 == Directive::Stop {
             result.push(DocItem::new());
         }
     }
+
     result.pop(); // Remove the last DocItem from the collection since it's empty
+
+    // Parse the results to look for the Title:
     result = result
         .into_iter()
         .filter(|i| {
@@ -34,19 +41,23 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
             true
         })
         .collect();
+
+    // Return the result
     Ok(result)
 }
 
+/// Parse an individual line and return the type of DocItem found and what to do next
 fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
     match get_line_variant(&line) {
+        // Check what type of line it is
         BlockType::Resource => parse_regular(line, result, BlockType::Resource, &parse_resource),
         BlockType::Output => parse_regular(line, result, BlockType::Output, &parse_interface),
         BlockType::Variable => parse_regular(line, result, BlockType::Variable, &parse_interface),
         BlockType::Comment => (parse_comment(line, result), Directive::Continue),
         BlockType::None => {
-            // Determine if it should stop parsing this block
+            // Determine whether to stop parsing this block
             if (line.starts_with('}') && result.category != BlockType::None)
-                || (line.trim().len() == 0 && result.category == BlockType::Comment)
+                || (line.trim().is_empty() && result.category == BlockType::Comment)
             {
                 return (result, Directive::Stop);
             }
@@ -63,12 +74,14 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
     }
 }
 
+/// See if a line starts with any of the known variants and assign the correponding BlockType
 fn get_line_variant(line: &str) -> BlockType {
     let variants = vec![
         ("resource ", BlockType::Resource),
         ("variable ", BlockType::Variable),
         ("output ", BlockType::Output),
         ("#", BlockType::Comment),
+        ("//", BlockType::Comment),
     ];
     for variant in variants {
         if line.starts_with(variant.0) {
@@ -78,11 +91,12 @@ fn get_line_variant(line: &str) -> BlockType {
     BlockType::None
 }
 
+/// Parse `regular` or `interface` (ie. `resource` vs `variable` or `output`) blocks
 fn parse_regular(
     line: String,
     mut result: DocItem,
     category: BlockType,
-    parser_function: &Fn(&str) -> String,
+    parser_function: &dyn Fn(&str) -> String,
 ) -> (DocItem, Directive) {
     result.category = category;
     result.name = parser_function(&line);
@@ -92,6 +106,7 @@ fn parse_regular(
     }
 }
 
+/// Parse a `resource` block
 fn parse_resource(line: &str) -> String {
     line.split_whitespace()
         .skip(1)
@@ -101,8 +116,8 @@ fn parse_resource(line: &str) -> String {
         .join(".")
 }
 
+/// Parse `variable` and `output` blocks
 fn parse_interface(line: &str) -> String {
-    // Parse variable and output blocks
     let result = line
         .split_whitespace()
         .skip(1)
@@ -112,15 +127,24 @@ fn parse_interface(line: &str) -> String {
     String::from(result)
 }
 
+/// Parse `description` items
 fn parse_description(line: &str) -> Option<&str> {
     let start = line.find('"')?;
     let substring = line.get(start..)?;
     Some(substring.trim_matches('"'))
 }
 
+/// Parse comment blocks
 fn parse_comment(line: String, mut result: DocItem) -> DocItem {
-    let parsed = line.trim_start_matches('#').trim();
-    if parsed.len() > 0 {
+    let parsed;
+
+    if line.starts_with('#') {
+        parsed = line.trim_start_matches('#').trim();
+    } else {
+        parsed = line.trim_start_matches("//").trim();
+    }
+
+    if !parsed.is_empty() {
         result.category = BlockType::Comment;
         result.description.push(String::from(parsed));
     }
@@ -140,7 +164,7 @@ mod tests {
         let line = r#"resource "foo" "bar" {"#;
         match get_line_variant(line) {
             BlockType::Resource => {}
-            _ => panic!("Type error!"),
+            _ => panic!("Type error! Expected Resource but found something else."),
         }
     }
 
@@ -149,7 +173,7 @@ mod tests {
         let line = r#"output "foo" {"#;
         match get_line_variant(line) {
             BlockType::Output => {}
-            _ => panic!("Type error!"),
+            _ => panic!("Type error! Expected Output but found something else."),
         }
     }
 
@@ -158,7 +182,7 @@ mod tests {
         let line = r#"variable "foo" {"#;
         match get_line_variant(line) {
             BlockType::Variable => {}
-            _ => panic!("Type error!"),
+            _ => panic!("Type error! Expected Variable but found something else."),
         }
     }
 
@@ -167,7 +191,7 @@ mod tests {
         let line = r#"# foo"#;
         match get_line_variant(line) {
             BlockType::Comment => {}
-            _ => panic!("Type error!"),
+            _ => panic!("Type error! Expected Comment but found something else."),
         }
     }
 
@@ -176,7 +200,7 @@ mod tests {
         let line = r#"#foo"#;
         match get_line_variant(line) {
             BlockType::Comment => {}
-            _ => panic!("Type error!"),
+            _ => panic!("Type error! Expected Comment but found something else."),
         }
     }
 
@@ -185,7 +209,7 @@ mod tests {
         let line = r#"  foo"#;
         match get_line_variant(line) {
             BlockType::None => {}
-            _ => panic!("Type error!"),
+            _ => panic!("Type error! Expected None but found someething else."),
         }
     }
 

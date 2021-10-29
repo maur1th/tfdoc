@@ -4,7 +4,7 @@ This project aims at generating Terraform module documentation.
 
 ## Usage
 
-tfdoc will parse all the files within a module's directory and generate a README.tf accordingly:
+tfdoc will parse all the files within a module's directory and generate markdown code accordingly:
 
 ```tf
 # Title: The name of the module
@@ -58,4 +58,6 @@ Top comment prefixed by "Title: " and the following lines will be at the top of 
 * `name`: We can have both comments on top and within outputs and variables
 ```
 
-Original idea by https://github.com/jyrivallan
+You can supply the `-t` parameter thusly `tfdoc -t $PATH_TO_MODULE` and get the output in table form rather than list form.
+
+Original idea by <https://github.com/jyrivallan>
