@@ -20,7 +20,7 @@ fn run_app() -> io::Result<()> {
     let path_arg: String;
 
     // If the -t parameter has been supplied, output the contents as tables
-    if env::args().nth(1).unwrap() == *"-t" {
+    if env::args().len() > 1 && env::args().nth(1).unwrap() == *"-t" {
         use_tables = true;
         path_arg = env::args().nth(2).unwrap_or_else(|| String::from("./"));
     } else {
