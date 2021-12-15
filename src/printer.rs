@@ -1,5 +1,7 @@
 //! Outputs the resulting information in Markdown format, using lists or tables, depending on preference.
 
+use std::path::PathBuf;
+
 use crate::types::{BlockType, DocItem};
 
 /// Renders the results to a markdown file
@@ -85,6 +87,21 @@ fn print_interface_table(result: &[DocItem], name: &str, variant: BlockType) {
             println!("|`{}`|{}|", item.name, item.description.join(" "));
         } else {
             println!("|`{}`||", item.name);
+        }
+    }
+}
+
+/// Outputs the file list either as a table or a list, depending on what's chosencargo 
+pub fn print_files(files: &[PathBuf], table: bool) {
+    println!("\n## Files\n");
+    if table {
+        println!("|File Name|Description|\n|-----|---------|");
+    }
+    for file in files {
+        if table {
+            println!("|`{}`||", &file.to_str().unwrap());
+        } else {
+            println!("* `{}`", &file.to_str().unwrap());
         }
     }
 }

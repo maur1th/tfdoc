@@ -33,12 +33,13 @@ fn run_app() -> io::Result<()> {
 
     // Parse the files found and put them into a list
     let mut result: Vec<types::DocItem> = vec![];
-    for tf_file in tf_files {
-        result.append(&mut parser::parse_hcl(tf_file)?);
+    for tf_file in &tf_files {
+        result.append(&mut parser::parse_hcl(tf_file.to_path_buf())?);
     }
 
     // Output the resulting markdown
     printer::render(&result, use_tables);
+    printer::print_files(&tf_files, use_tables);
 
     // Return safely
     Ok(())
