@@ -21,7 +21,7 @@ resource "aws_instance" "no_comment_here" {
 ## tfdoc discards other "orphaned" comments
 ##
 
-# We can have both comments on top
+// We can have both comments on top
 output "name" {
   description = "and within outputs and variables"
 }
