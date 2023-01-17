@@ -14,7 +14,7 @@ enum Directive {
     Stop,
 }
 
-/// Read a file and return a parsed list of DocItems
+/// Read a file and return a parsed list of `DocItems`
 pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
     let mut result = vec![DocItem::new()];
 
@@ -31,17 +31,14 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
     result.pop(); // Remove the last DocItem from the collection since it's empty
 
     // Parse the results to look for the Title:
-    result = result
-        .into_iter()
-        .filter(|i| {
+    result.retain(|i| {
             if i.category == BlockType::Comment {
                 if let Some(line) = i.description.first() {
                     return line.starts_with("Title: ");
                 }
             }
             true
-        })
-        .collect();
+        });
 
     log::trace!("parse_hcl::result = {:?}", result);
 
@@ -49,7 +46,7 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
     Ok(result)
 }
 
-/// Parse an individual line and return the type of DocItem found and what to do next
+/// Parse an individual line and return the type of `DocItem` found and what to do next
 fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
     match get_line_variant(&line) {
         // Check what type of line it is
@@ -77,7 +74,7 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
     }
 }
 
-/// See if a line starts with any of the known variants and assign the corresponding BlockType
+/// See if a line starts with any of the known variants and assign the corresponding `BlockType`
 fn get_line_variant(line: &str) -> BlockType {
     let variants = vec![
         ("resource ", BlockType::Resource),

@@ -26,9 +26,9 @@ pub fn render(result: &[DocItem], as_table: bool) {
 /// Creates the H1 title block
 fn print_title_block(description: &[String]) {
     let title = &description.first().unwrap()["Title: ".len()..];
-    println!("# {}\n", title);
+    println!("# {title}\n");
     for line in description.iter().skip(1) {
-        println!("{}", line);
+        println!("{line}");
     }
 }
 
@@ -41,7 +41,7 @@ fn print_resources(result: &[DocItem], name: &str, variant: BlockType) {
         .enumerate()
     {
         if index == 0 {
-            println!("\n## {}s\n", name);
+            println!("\n## {name}s\n");
         }
         if variant == BlockType::Resource {
             println!("* `{}`: {}", item.name, item.description.join(" "));
@@ -53,7 +53,7 @@ fn print_resources(result: &[DocItem], name: &str, variant: BlockType) {
 fn print_interface(result: &[DocItem], name: &str, variant: BlockType) {
     for (index, item) in result.iter().filter(|i| i.category == variant).enumerate() {
         if index == 0 {
-            println!("\n## {}s\n", name);
+            println!("\n## {name}s\n");
         }
         if !item.description.is_empty() {
             println!("* `{}`: {}", item.name, item.description.join(" "));
@@ -71,8 +71,8 @@ fn print_resources_table(result: &[DocItem], name: &str, variant: BlockType) {
         .enumerate()
     {
         if index == 0 {
-            println!("\n## {}s", name);
-            println!("\n|{}|Description|\n|-----|---------|", name);
+            println!("\n## {name}s");
+            println!("\n|{name}|Description|\n|-----|---------|");
         }
         if variant == BlockType::Resource {
             println!("|`{}`|{}|", item.name, item.description.join(" "));
@@ -84,8 +84,8 @@ fn print_resources_table(result: &[DocItem], name: &str, variant: BlockType) {
 fn print_interface_table(result: &[DocItem], name: &str, variant: BlockType) {
     for (index, item) in result.iter().filter(|i| i.category == variant).enumerate() {
         if index == 0 {
-            println!("\n## {}s", name);
-            println!("\n|{}|Description|\n|-----|---------|", name);
+            println!("\n## {name}s");
+            println!("\n|{name}|Description|\n|-----|---------|");
         }
         if !item.description.is_empty() {
             println!("|`{}`|{}|", item.name, item.description.join(" "));

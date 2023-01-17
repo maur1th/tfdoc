@@ -26,11 +26,11 @@ fn run_app() -> io::Result<()> {
     if env::args().len() > 1 && env::args().nth(1).unwrap() == *"-t" {
         use_tables = true;
         path_arg = env::args().nth(2).unwrap_or_else(|| String::from("./"));
-        log::debug!("Using tables. Path: {path_arg}")
+        log::debug!("Using tables. Path: {path_arg}");
     } else {
         use_tables = false;
         path_arg = env::args().nth(1).unwrap_or_else(|| String::from("./"));
-        log::debug!("Using lists. Path: {path_arg}")
+        log::debug!("Using lists. Path: {path_arg}");
     }
 
     // Find just the Terraform files
@@ -40,7 +40,7 @@ fn run_app() -> io::Result<()> {
     let mut result: Vec<types::DocItem> = vec![];
 
     for tf_file in &tf_files {
-        result.append(&mut parser::parse_hcl(tf_file.to_path_buf())?);
+        result.append(&mut parser::parse_hcl(tf_file.clone())?);
         log::debug!("main::result = {:?}", result);
     }
 
@@ -64,7 +64,7 @@ fn main() {
     ::std::process::exit(match run_app() {
         Ok(_) => 0,
         Err(err) => {
-            eprintln!("error: {}", err);
+            eprintln!("error: {err}");
             1
         }
     });
