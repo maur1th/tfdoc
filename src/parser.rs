@@ -20,7 +20,7 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
 
     // Read the lines in the file and parse
     for line in BufReader::new(File::open(filename)?).lines() {
-        let state = parse_line(line?, result.pop().unwrap());
+        let state = parse_line(line?, result.pop().unwrap_or_default());
         log::trace!("parse_hcl::state = {:?}", state);
         result.push(state.0);
         if state.1 == Directive::Stop {
