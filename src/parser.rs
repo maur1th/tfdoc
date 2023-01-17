@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use crate::types::{BlockType, DocItem};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 enum Directive {
     Continue,
     Stop,
@@ -21,6 +21,7 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
     // Read the lines in the file and parse
     for line in BufReader::new(File::open(filename)?).lines() {
         let state = parse_line(line?, result.pop().unwrap());
+        log::trace!("parse_hcl::state = {:?}", state);
         result.push(state.0);
         if state.1 == Directive::Stop {
             result.push(DocItem::new());
@@ -42,6 +43,8 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
         })
         .collect();
 
+    log::trace!("parse_hcl::result = {:?}", result);
+
     // Return the result
     Ok(result)
 }
@@ -62,7 +65,7 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
                 return (result, Directive::Stop);
             }
             // Parse description if relevant
-            if (result.category == BlockType::Variable || result.category == BlockType::Output)
+            if (result.category == BlockType::Variable || result.category == BlockType::Output || result.category == BlockType::Resource)
                 && line.trim().starts_with("description")
             {
                 if let Some(description) = parse_description(&line) {
@@ -74,7 +77,7 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
     }
 }
 
-/// See if a line starts with any of the known variants and assign the correponding BlockType
+/// See if a line starts with any of the known variants and assign the corresponding BlockType
 fn get_line_variant(line: &str) -> BlockType {
     let variants = vec![
         ("resource ", BlockType::Resource),
@@ -136,13 +139,11 @@ fn parse_description(line: &str) -> Option<&str> {
 
 /// Parse comment blocks
 fn parse_comment(line: String, mut result: DocItem) -> DocItem {
-    let parsed;
-
-    if line.starts_with('#') {
-        parsed = line.trim_start_matches('#').trim();
+    let parsed = if line.starts_with('#') {
+        line.trim_start_matches('#').trim()
     } else {
-        parsed = line.trim_start_matches("//").trim();
-    }
+        line.trim_start_matches("//").trim()
+    };
 
     if !parsed.is_empty() {
         result.category = BlockType::Comment;
@@ -209,7 +210,7 @@ mod tests {
         let line = r#"  foo"#;
         match get_line_variant(line) {
             BlockType::None => {}
-            _ => panic!("Type error! Expected None but found someething else."),
+            _ => panic!("Type error! Expected None but found something else."),
         }
     }
 

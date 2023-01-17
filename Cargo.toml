@@ -1,7 +1,7 @@
 [package]
 name = "tfdoc"
 edition = "2021"
-version = "0.1.6"
+version = "0.2.0"
 authors = ["Thomas Maurin <maur1th@users.noreply.github.com>"]
 license = "Apache-2.0"
 repository = "https://github.com/maur1th/tfdoc"
@@ -14,3 +14,5 @@ readme = "README.md"
 travis-ci = { repository = "maur1th/tfdoc", branch = "master" }
 
 [dependencies]
+env_logger = "0.10.0"
+log = "0.4.17"
