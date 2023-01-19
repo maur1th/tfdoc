@@ -16,14 +16,15 @@ pub struct DocItem {
 }
 
 impl DocItem {
-    /// Creates a new empty DocItem entity
+    /// Creates a new empty `DocItem` entity
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 }
 
 impl Default for DocItem {
-    /// Creates a default DocItem
+    /// Creates a default `DocItem`
     fn default() -> Self {
         Self {
             category: BlockType::None,
@@ -34,18 +35,18 @@ impl Default for DocItem {
 }
 
 impl fmt::Display for DocItem {
-    /// Formats a DocItem for display
+    /// Formats a `DocItem` for display
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if !self.name.is_empty() {
-            write!(f, "`{}`: {}", self.name, self.description.join(" "))
-        } else {
+        if self.name.is_empty() {
             write!(f, "{}", self.description.join(" "))
+        } else {
+            write!(f, "`{}`: {}", self.name, self.description.join(" "))
         }
     }
 }
 
 /// Enumerates the types of blocks recognized.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum BlockType {
     Comment,
     Resource,

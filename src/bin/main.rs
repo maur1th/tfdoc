@@ -10,6 +10,8 @@ use std::env;
 use std::io;
 use std::path::Path;
 
+use env_logger::Env;
+
 extern crate tfdoc;
 use tfdoc::{parser, printer, types, util};
 
@@ -20,12 +22,14 @@ fn run_app() -> io::Result<()> {
     let path_arg: String;
 
     // If the -t parameter has been supplied, output the contents as tables
-    if env::args().len() > 1 && env::args().nth(1).unwrap() == *"-t" {
+    if env::args().len() > 1 && env::args().nth(1).unwrap_or_default() == *"-t" {
         use_tables = true;
         path_arg = env::args().nth(2).unwrap_or_else(|| String::from("./"));
+        log::debug!("Using tables. Path: {path_arg}");
     } else {
         use_tables = false;
         path_arg = env::args().nth(1).unwrap_or_else(|| String::from("./"));
+        log::debug!("Using lists. Path: {path_arg}");
     }
 
     // Find just the Terraform files
@@ -33,8 +37,10 @@ fn run_app() -> io::Result<()> {
 
     // Parse the files found and put them into a list
     let mut result: Vec<types::DocItem> = vec![];
+
     for tf_file in &tf_files {
-        result.append(&mut parser::parse_hcl(tf_file.to_path_buf())?);
+        result.append(&mut parser::parse_hcl(tf_file.clone())?);
+        log::debug!("main::result = {:?}", result);
     }
 
     // Output the resulting markdown
@@ -47,10 +53,16 @@ fn run_app() -> io::Result<()> {
 
 /// Calls `run_app` and exits with error code `0` if successful. Otherwise prints an error message to `stderr` and exits with error code `1`.
 fn main() {
+    // Enable logging
+    let env = Env::default().filter_or("TFDOC_LOG", "info");
+
+    env_logger::init_from_env(env);
+
+    // Run the application
     ::std::process::exit(match run_app() {
         Ok(_) => 0,
         Err(err) => {
-            eprintln!("error: {}", err);
+            eprintln!("error: {err}");
             1
         }
     });
