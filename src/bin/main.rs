@@ -12,7 +12,6 @@ use std::path::Path;
 
 use env_logger::Env;
 
-
 extern crate tfdoc;
 use tfdoc::{parser, printer, types, util};
 
@@ -23,7 +22,7 @@ fn run_app() -> io::Result<()> {
     let path_arg: String;
 
     // If the -t parameter has been supplied, output the contents as tables
-    if env::args().len() > 1 && env::args().nth(1).unwrap() == *"-t" {
+    if env::args().len() > 1 && env::args().nth(1).unwrap_or_default() == *"-t" {
         use_tables = true;
         path_arg = env::args().nth(2).unwrap_or_else(|| String::from("./"));
         log::debug!("Using tables. Path: {path_arg}");
@@ -55,8 +54,7 @@ fn run_app() -> io::Result<()> {
 /// Calls `run_app` and exits with error code `0` if successful. Otherwise prints an error message to `stderr` and exits with error code `1`.
 fn main() {
     // Enable logging
-    let env = Env::default()
-        .filter_or("TFDOC_LOG", "info");
+    let env = Env::default().filter_or("TFDOC_LOG", "info");
 
     env_logger::init_from_env(env);
 

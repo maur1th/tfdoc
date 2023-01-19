@@ -6,6 +6,10 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 /// Returns a list of Terraform files based on the file extension `.tf`
+///
+/// # Errors
+/// - Unable to read file
+/// - Unable to unwrap entry
 pub fn list_tf_files(dir: &Path) -> io::Result<Vec<PathBuf>> {
     let mut result: Vec<PathBuf> = vec![];
     for entry in fs::read_dir(dir)? {

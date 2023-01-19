@@ -15,12 +15,15 @@ enum Directive {
 }
 
 /// Read a file and return a parsed list of `DocItems`
+///
+/// # Errors
+///  - Unable to parse the line
 pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
     let mut result = vec![DocItem::new()];
 
     // Read the lines in the file and parse
     for line in BufReader::new(File::open(filename)?).lines() {
-        let state = parse_line(line?, result.pop().unwrap_or_default());
+        let state = parse_line(&line?, result.pop().unwrap_or_default());
         log::trace!("parse_hcl::state = {:?}", state);
         result.push(state.0);
         if state.1 == Directive::Stop {
@@ -32,13 +35,13 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
 
     // Parse the results to look for the Title:
     result.retain(|i| {
-            if i.category == BlockType::Comment {
-                if let Some(line) = i.description.first() {
-                    return line.starts_with("Title: ");
-                }
+        if i.category == BlockType::Comment {
+            if let Some(line) = i.description.first() {
+                return line.starts_with("Title: ");
             }
-            true
-        });
+        }
+        true
+    });
 
     log::trace!("parse_hcl::result = {:?}", result);
 
@@ -47,8 +50,8 @@ pub fn parse_hcl(filename: PathBuf) -> std::io::Result<Vec<DocItem>> {
 }
 
 /// Parse an individual line and return the type of `DocItem` found and what to do next
-fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
-    match get_line_variant(&line) {
+fn parse_line(line: &str, mut result: DocItem) -> (DocItem, Directive) {
+    match get_line_variant(line) {
         // Check what type of line it is
         BlockType::Resource => parse_regular(line, result, BlockType::Resource, &parse_resource),
         BlockType::Output => parse_regular(line, result, BlockType::Output, &parse_interface),
@@ -62,10 +65,12 @@ fn parse_line(line: String, mut result: DocItem) -> (DocItem, Directive) {
                 return (result, Directive::Stop);
             }
             // Parse description if relevant
-            if (result.category == BlockType::Variable || result.category == BlockType::Output || result.category == BlockType::Resource)
+            if (result.category == BlockType::Variable
+                || result.category == BlockType::Output
+                || result.category == BlockType::Resource)
                 && line.trim().starts_with("description")
             {
-                if let Some(description) = parse_description(&line) {
+                if let Some(description) = parse_description(line) {
                     result.description.push(String::from(description));
                 }
             }
@@ -93,16 +98,17 @@ fn get_line_variant(line: &str) -> BlockType {
 
 /// Parse `regular` or `interface` (ie. `resource` vs `variable` or `output`) blocks
 fn parse_regular(
-    line: String,
+    line: &str,
     mut result: DocItem,
     category: BlockType,
     parser_function: &dyn Fn(&str) -> String,
 ) -> (DocItem, Directive) {
     result.category = category;
-    result.name = parser_function(&line);
-    match line.trim().ends_with('}') {
-        true => (result, Directive::Stop),
-        false => (result, Directive::Continue),
+    result.name = parser_function(line);
+    if line.trim().ends_with('}') {
+        (result, Directive::Stop)
+    } else {
+        (result, Directive::Continue)
     }
 }
 
@@ -135,7 +141,7 @@ fn parse_description(line: &str) -> Option<&str> {
 }
 
 /// Parse comment blocks
-fn parse_comment(line: String, mut result: DocItem) -> DocItem {
+fn parse_comment(line: &str, mut result: DocItem) -> DocItem {
     let parsed = if line.starts_with('#') {
         line.trim_start_matches('#').trim()
     } else {
